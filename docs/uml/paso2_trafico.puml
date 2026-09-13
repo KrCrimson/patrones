@@ -1,0 +1,38 @@
+@startuml
+skinparam style strictuml
+monochrome true
+title Laboratorio 01 - Paso 2: SOLID (SRP & OCP) - Centro de Control de Tráfico
+
+interface ITollStrategy {
+    + calculateFee(vehicleType : String) : double
+}
+
+class StandardToll implements ITollStrategy {
+    + calculateFee(vehicleType : String) : double
+}
+
+class DynamicToll implements ITollStrategy {
+    + calculateFee(vehicleType : String) : double
+}
+
+class TrafficControlCenter {
+    - strategy : ITollStrategy
+    + TrafficControlCenter(strategy : ITollStrategy)
+    + setStrategy(strategy : ITollStrategy) : void
+    + processToll(vehicle : String) : double
+}
+
+TrafficControlCenter o-> "1" ITollStrategy : usa / delega
+
+note top of ITollStrategy
+  Patrón Strategy (OCP):
+  Cerrado a la modificación,
+  abierto a la extensión sin switch-cases.
+end note
+
+note bottom of TrafficControlCenter
+  SRP: Solo orquesta el tráfico,
+  no calcula fórmulas de peaje.
+end note
+
+@enduml

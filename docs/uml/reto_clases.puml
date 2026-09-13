@@ -1,0 +1,169 @@
+@startuml
+skinparam style strictuml
+monochrome true
+title Reto Académico: Subsistema de Movilidad Sostenible y Electromovilidad - Diagrama de Clases
+
+package "com.smartcity.mobility.contracts" {
+    interface RentableVehicle {
+        + getVehicleId() : String
+        + getBaseHourlyRate() : double
+        + getStatus() : VehicleStatus
+        + setStatus(status : VehicleStatus) : void
+        + lock() : void
+        + unlock() : void
+    }
+
+    interface Rechargeable {
+        + getBatteryLevel() : double
+        + recharge(amountPercentage : double) : void
+        + getMaxBatteryCapacity() : double
+    }
+
+    interface TelemetrySource {
+        + getGpsCoordinates() : String
+        + getSpeedKmH() : double
+    }
+
+    interface AutonomousNavigable {
+        + setAutonomousRoute(routeId : String) : void
+        + isAutopilotEngaged() : boolean
+        + emergencyBrake() : void
+    }
+
+    interface PricingStrategy {
+        + calculatePrice(vehicle : RentableVehicle, hours : int) : double
+    }
+
+    interface VehicleRepository {
+        + findById(id : String) : Optional<RentableVehicle>
+        + save(vehicle : RentableVehicle) : void
+        + findAllAvailable() : List<RentableVehicle>
+    }
+}
+
+package "com.smartcity.mobility.model" {
+    enum VehicleStatus {
+        AVAILABLE
+        RENTED
+        CHARGING
+        MAINTENANCE
+    }
+
+    abstract class Vehicle implements RentableVehicle, TelemetrySource {
+        - id : String
+        - baseHourlyRate : double
+        - status : VehicleStatus
+        - gpsLocation : String
+        - speedKmH : double
+        + Vehicle(id : String, baseRate : double, initialLocation : String)
+        + getVehicleId() : String
+        + getBaseHourlyRate() : double
+        + getStatus() : VehicleStatus
+        + setStatus(status : VehicleStatus) : void
+        + lock() : void
+        + unlock() : void
+        + getGpsCoordinates() : String
+        + getSpeedKmH() : double
+        + setSpeedKmH(speed : double) : void
+        + setGpsCoordinates(location : String) : void
+    }
+
+    class Scooter extends Vehicle implements Rechargeable {
+        - batteryLevel : double
+        - maxCapacityKWh : double
+        + Scooter(id : String, baseRate : double, initialLocation : String, battery : double)
+        + getBatteryLevel() : double
+        + recharge(amountPercentage : double) : void
+        + getMaxBatteryCapacity() : double
+    }
+
+    class AutonomousBus extends Vehicle implements Rechargeable, AutonomousNavigable {
+        - batteryLevel : double
+        - maxCapacityKWh : double
+        - currentRouteId : String
+        - autopilotEngaged : boolean
+        - passengerCapacity : int
+        + AutonomousBus(id : String, baseRate : double, initialLocation : String, battery : double, capacity : int)
+        + getBatteryLevel() : double
+        + recharge(amountPercentage : double) : void
+        + getMaxBatteryCapacity() : double
+        + setAutonomousRoute(routeId : String) : void
+        + isAutopilotEngaged() : boolean
+        + emergencyBrake() : void
+        + getPassengerCapacity() : int
+    }
+
+    class ChargingStation {
+        - stationId : String
+        - totalSlots : int
+        - availableSlots : int
+        + ChargingStation(stationId : String, totalSlots : int)
+        + getStationId() : String
+        + getAvailableSlots() : int
+        + plugAndRecharge(vehicle : Rechargeable, amountPercentage : double) : void
+    }
+
+    class RentalTicket {
+        - ticketId : String
+        - vehicleId : String
+        - hoursRented : int
+        - totalCost : double
+        - timestamp : Instant
+        + RentalTicket(ticketId : String, vehicleId : String, hours : int, cost : double)
+        + getTicketId() : String
+        + getVehicleId() : String
+        + getHoursRented() : int
+        + getTotalCost() : double
+        + getTimestamp() : Instant
+    }
+}
+
+package "com.smartcity.mobility.pricing" {
+    class StandardPricingStrategy implements PricingStrategy {
+        + calculatePrice(vehicle : RentableVehicle, hours : int) : double
+    }
+
+    class EcoStudentPricingStrategy implements PricingStrategy {
+        - discountPercentage : double
+        + EcoStudentPricingStrategy(discountPercentage : double)
+        + calculatePrice(vehicle : RentableVehicle, hours : int) : double
+    }
+
+    class AutonomousBusFleetStrategy implements PricingStrategy {
+        - operationalSubsidizedRate : double
+        + AutonomousBusFleetStrategy(subsidizedRate : double)
+        + calculatePrice(vehicle : RentableVehicle, hours : int) : double
+    }
+}
+
+package "com.smartcity.mobility.service" {
+    class RentalService {
+        - repository : VehicleRepository
+        - pricingStrategy : PricingStrategy
+        + RentalService(repository : VehicleRepository, pricingStrategy : PricingStrategy)
+        + rentVehicle(vehicleId : String, hours : int) : RentalTicket
+        + returnVehicle(ticket : RentalTicket) : void
+        + setPricingStrategy(pricingStrategy : PricingStrategy) : void
+    }
+}
+
+RentalService o--> "1" VehicleRepository : DIP (inyección por constructor)
+RentalService o--> "1" PricingStrategy : OCP / Strategy (inyección por constructor)
+ChargingStation ..> Rechargeable : polimorfismo (ISP)
+Vehicle --> VehicleStatus
+RentalService ..> RentalTicket : genera
+
+note right of RentableVehicle
+  ISP (Interface Segregation Principle):
+  Interfaces especializadas y desacopladas
+  para evitar "The God Interface".
+end note
+
+note right of RentalService
+  DIP (Dependency Inversion Principle):
+  RentalService depende de abstracciones
+  (VehicleRepository y PricingStrategy),
+  no de implementaciones concretas.
+end note
+
+@enduml

@@ -1,0 +1,43 @@
+@startuml
+skinparam style strictuml
+monochrome true
+title Laboratorio 01 - Paso 3: SOLID (LSP & ISP) - Actuadores y Dispositivos Urbanos
+
+interface IMonitoreable {
+    + captureData() : String
+}
+
+interface IActuable {
+    + executeAction(command : String) : void
+}
+
+class SmartCamera implements IMonitoreable {
+    - resolution : String
+    + SmartCamera(resolution : String)
+    + captureData() : String
+}
+
+class StreetLight implements IActuable {
+    - brightnessLevel : int
+    + StreetLight()
+    + executeAction(command : String) : void
+    + getBrightnessLevel() : int
+}
+
+note top of IMonitoreable
+  Principio ISP (Segregación de Interfaces):
+  Interfaces granulares y específicas.
+  Evita el anti-patrón "The God Interface".
+end note
+
+note bottom of SmartCamera
+  SmartCamera solo monitorea;
+  no se le obliga a implementar executeAction.
+end note
+
+note bottom of StreetLight
+  StreetLight solo actúa;
+  no se le obliga a capturar video.
+end note
+
+@enduml

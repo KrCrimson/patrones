@@ -1,0 +1,28 @@
+@startuml
+skinparam style strictuml
+monochrome true
+title Laboratorio 01 - Paso 1: Abstracción y Sensores Ambientales
+
+interface ISensor {
+    + getMeasurement() : double
+}
+
+class AirQualitySensor implements ISensor {
+    - ppmValue : double
+    + AirQualitySensor(ppmValue : double)
+    + getMeasurement() : double
+}
+
+class NoiseSensor implements ISensor {
+    - decibels : double
+    + NoiseSensor(decibels : double)
+    + getMeasurement() : double
+}
+
+note right of ISensor
+  Principio de Abstracción:
+  Programar para una interfaz,
+  no para una implementación.
+end note
+
+@enduml

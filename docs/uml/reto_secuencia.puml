@@ -1,0 +1,79 @@
+@startuml
+skinparam style strictuml
+monochrome true
+title Reto Académico: Subsistema de Movilidad - Diagrama de Secuencia de Alquiler y Recarga
+
+actor "Ciudadano / Cliente" as Client
+participant "RentalService" as Service
+participant "VehicleRepository" as Repo
+participant "PricingStrategy" as Strategy
+participant "vehicle : RentableVehicle" as Vehicle
+participant "ChargingStation" as Station
+
+Client -> Service : rentVehicle("SCOOTER-01", 3)
+activate Service
+
+Service -> Repo : findById("SCOOTER-01")
+activate Repo
+Repo --> Service : Optional<RentableVehicle> (Scooter)
+deactivate Repo
+
+alt Vehículo no existe o no está disponible
+    Service --> Client : lanza IllegalStateException("Vehículo no disponible")
+else Vehículo disponible y operativo
+    Service -> Strategy : calculatePrice(vehicle, 3)
+    activate Strategy
+    Strategy --> Service : totalCost
+    deactivate Strategy
+
+    Service -> Vehicle : unlock()
+    activate Vehicle
+    Vehicle -> Vehicle : setStatus(RENTED)
+    Vehicle --> Service : ok
+    deactivate Vehicle
+
+    Service -> Repo : save(vehicle)
+    activate Repo
+    Repo --> Service : ok
+    deactivate Repo
+
+    create participant "ticket : RentalTicket" as Ticket
+    Service -> Ticket : new("TCK-987", "SCOOTER-01", 3, totalCost)
+
+    Service --> Client : RentalTicket
+end
+deactivate Service
+
+== Proceso Posterior: Recarga en Estación Eléctrica ==
+
+Client -> Service : returnVehicle(ticket)
+activate Service
+Service -> Repo : findById("SCOOTER-01")
+activate Repo
+Repo --> Service : vehicle
+deactivate Repo
+
+Service -> Vehicle : lock()
+activate Vehicle
+Vehicle -> Vehicle : setStatus(AVAILABLE)
+Vehicle --> Service : ok
+deactivate Vehicle
+Service --> Client : confirmación de devolución
+deactivate Service
+
+Client -> Station : plugAndRecharge(vehicle, 40.0)
+activate Station
+note over Station, Vehicle
+  Polimorfismo con ISP:
+  ChargingStation solo interactúa
+  con la interfaz Rechargeable.
+end note
+Station -> Vehicle : recharge(40.0)
+activate Vehicle
+Vehicle -> Vehicle : batteryLevel += 40.0
+Vehicle --> Station : ok
+deactivate Vehicle
+Station --> Client : recarga completada
+deactivate Station
+
+@enduml

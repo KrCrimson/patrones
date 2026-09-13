@@ -1,0 +1,42 @@
+@startuml
+skinparam style strictuml
+monochrome true
+title Laboratorio 01 - Paso 4: SOLID (DIP) - Unidad de Respuesta de Emergencia
+
+interface IEmergencyService {
+    + respond(location : String) : void
+}
+
+class PoliceDepartment implements IEmergencyService {
+    + respond(location : String) : void
+}
+
+class FireDepartment implements IEmergencyService {
+    + respond(location : String) : void
+}
+
+class MedicalAmbulance implements IEmergencyService {
+    + respond(location : String) : void
+}
+
+class EmergencyCenter {
+    - services : List<IEmergencyService>
+    + EmergencyCenter(services : List<IEmergencyService>)
+    + dispatchAlert(location : String) : void
+}
+
+EmergencyCenter o-> "*" IEmergencyService : inyectado por constructor (DIP)
+
+note top of IEmergencyService
+  Principio DIP (Inversión de Dependencias):
+  Los módulos de alto nivel (EmergencyCenter)
+  no dependen de módulos de bajo nivel (Police, Fire).
+  Ambos dependen de abstracciones.
+end note
+
+note bottom of EmergencyCenter
+  Inyección de Dependencias por Constructor:
+  Facilita testeo con dobles/mocks y desacoplamiento total.
+end note
+
+@enduml
